@@ -1,0 +1,51 @@
+1. Identify the source and destination boxes.
+●	Scan through the list of boxes to find which contains the source point. Do this as well for the destination point. 
+●   Instead of returning a list indicating that you haven’t visited any boxes, return a list of these two boxes.
+
+# Ben's notes: For this, just loop over all the numbers to get the source and destinations within
+
+2. Implement the simplest complete search algorithm you can.
+●	Starting with the source box, run breadth-first search looking for a sequence of boxes that reaches the destination box. 
+●   If no such path can be found, make sure your program can report this correctly (such as by printing out “No path!” in the console). 
+●   To earn the point, the “No path!” message needs to only show when there really isn’t a path. 
+●   Complete search algorithms buy us the ability to report this confidently.  You can also use this to evaluate your A* outputs!
+
+# Ben's notes:
+Amir Patel's A* stuff: https://www.redblobgames.com/pathfinding/a-star/introduction.html
+
+frontier = Queue()
+frontier.put(start)
+reached = set()
+reached.add(start)
+
+while not frontier.empty():
+   current = frontier.get()
+   for next in graph.neighbors(current):
+      if next not in reached:
+         frontier.put(next)
+         reached.add(next)
+
+
+
+Modify your simple search to compute a legal list of line segments demonstrating the path.
+●	Instead of doing your search purely at the box level, add an extra table (dict) to keep track of the precise x,y position within that box that your path with traverse. 
+●   In the solution code, we call this table 'detail_points', a dictionary the maps boxes to (x,y) pairs. 
+
+# Ben's Notes:
+Think of this as you're the NPC now navigating between line segments to get to your destination.
+
+X:
+
+If the X of your current point is less than the min X of the next box, go right to the min X of the next box.
+ELSE
+If the X of your current point is GREATER than the max X of the next box, go left to the max X of the next box. 
+ELSE
+If the X of your current point is BETWEEN the min and max X of the next box, don't change your X at all, just the Y.
+
+Y:
+
+If the Y of your current point is less than the min Y of the next box (y1), go DOWN to the min Y of the next box.
+ELSE
+If the Y of your current point is GREATER than the max Y of the next box (y2), go left to the max Y of the next box. 
+ELSE
+If the X of your current point is BETWEEN the min and max Y of the next box, don't change your Y at all, just the X.
