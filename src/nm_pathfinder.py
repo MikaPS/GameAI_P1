@@ -1,4 +1,5 @@
 import queue
+import math
 
 def is_point_in_box(point, box):
     # box: [left x corner, right x corner, top y corner, bottom y corner]
@@ -87,6 +88,17 @@ def legal_path_between(source_point, source_box, destination_box, detail_points)
     # match the source box with the bounds of the destination box
     detail_points[source_box] = destination_point
     return destination_point
+
+def get_euclidean_distance(p1: tuple, p2:  tuple):
+    x = 0
+    y = 1
+
+    distance = math.pow((p2[x] - p1[x]), 2) + pow((p2[y] - p1[y]), 2)
+    normalized_distance = math.sqrt(distance)
+    return normalized_distance
+
+
+
 
 def find_path (source_point, destination_point, mesh):
     # Mesh: has a list of boxes and a list of adjacencies

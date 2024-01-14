@@ -27,7 +27,7 @@ while not frontier.empty():
 
 
 
-Modify your simple search to compute a legal list of line segments demonstrating the path.
+3. Modify your simple search to compute a legal list of line segments demonstrating the path.
 ●	Instead of doing your search purely at the box level, add an extra table (dict) to keep track of the precise x,y position within that box that your path with traverse. 
 ●   In the solution code, we call this table 'detail_points', a dictionary the maps boxes to (x,y) pairs. 
 
@@ -49,3 +49,25 @@ ELSE
 If the Y of your current point is GREATER than the max Y of the next box (y2), go left to the max Y of the next box. 
 ELSE
 If the X of your current point is BETWEEN the min and max Y of the next box, don't change your Y at all, just the X.
+
+4. Modify the supplied Dijkstra's implementation into an A* implementation.
+●	Find the part of the code that puts new cells/boxes into the priority queue.
+   
+   # Ben's Notes: It's on line 37 of Dijkstra_forward_search.py!
+   # Helper function will be made right now.
+
+●	Instead of using the new distance (distance to u plus length of edge u--v) as the priority for insertion, 
+   augment this with (add to it) an estimate of the distance remaining. 
+   # Ben's Notes: We calculate this! On line 44, currently
+
+   If you already produced a helper function to measure the Euclidean distance between two detail points, 
+   you can use this function to measure the distance between the new detail point and the final destination point.
+
+●	When you are dequeuing boxes from the priority queue, remember that their priority value is not a distance. 
+   You'll have to recover the true distance to the just-dequeued box by looking it up in your distance table.
+   # Ben's Notes: "distance table" is currently unknown.
+
+●	To make sure A* is implemented correctly, try to find a path along a straight vertical or horizontal hallway. 
+   The A* algorithm should mostly visit boxes between the two points. 
+   Dijkstra's however, will also explore in the opposite direction of the destination point up to the radius at which it found the destination. 
+   In the example Homer map, there is a nice vertical hallway just outside of the circular chamber at the top-right.   

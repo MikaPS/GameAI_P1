@@ -1,7 +1,16 @@
 from maze_environment import load_level, show_level, save_level_costs
 from math import inf, sqrt
 from heapq import heappop, heappush
+from math import pow
 
+
+def get_euclidean_distance(p1: tuple, p2:  tuple):
+    x = 0
+    y = 1
+
+    distance = pow((p2[x] - p1[x]), 2) + pow((p2[y] - p1[y]), 2)
+    normalized_distance = sqrt(distance)
+    return normalized_distance
 
 def dijkstras_shortest_path(initial_position, destination, graph, adj):
     """ Searches for a minimal cost path through a graph using Dijkstra's algorithm.
@@ -21,6 +30,7 @@ def dijkstras_shortest_path(initial_position, destination, graph, adj):
     pathcosts = {initial_position: 0}       # maps cells to their pathcosts (found so far)
     queue = []
     heappush(queue, (0, initial_position))  # maintain a priority queue of cells
+    distance_for_cell = {}
     
     while queue:
         priority, cell = heappop(queue)
@@ -30,11 +40,14 @@ def dijkstras_shortest_path(initial_position, destination, graph, adj):
         # investigate children
         for (child, step_cost) in adj(graph, cell):
             # calculate cost along this path to child
-            cost_to_child = priority + transition_cost(graph, cell, child)
+            cost_to_child = step_cost + transition_cost(graph, cell, child)  # Transition cost is literally the cost of moving between two boxes.
+            # estimated cost to goal
+            estimated_cost = get_euclidean_distance(child, destination)
+            total_estimation = cost_to_child + estimated_cost
             if child not in pathcosts or cost_to_child < pathcosts[child]:
                 pathcosts[child] = cost_to_child            # update the cost
                 paths[child] = cell                         # set the backpointer
-                heappush(queue, (cost_to_child, child))     # put the child on the priority queue
+                heappush(queue, (total_estimation, child))     # put the child on the priority queue
             
     return False
 
@@ -103,7 +116,7 @@ def test_route(filename, src_waypoint, dst_waypoint):
 
 
 if __name__ == '__main__':
-    filename, src_waypoint, dst_waypoint = 'example.txt', 'a','e'
+    filename, src_waypoint, dst_waypoint = 'example.txt', 'e','a'
 
     # Use this function call to find the route between two waypoints.
     test_route(filename, src_waypoint, dst_waypoint)
