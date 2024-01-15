@@ -44,7 +44,7 @@ def dijkstras_shortest_path(initial_position, destination, graph, adj):
             # estimated cost to goal
             estimated_cost = get_euclidean_distance(child, destination)
             total_estimation = cost_to_child + estimated_cost
-            if child not in pathcosts or cost_to_child < pathcosts[child]:
+            if child not in pathcosts or cost_to_child < pathcosts[child]: # if the new total cost is less than the current cost to get to that node
                 pathcosts[child] = cost_to_child            # update the cost
                 paths[child] = cell                         # set the backpointer
                 heappush(queue, (total_estimation, child))     # put the child on the priority queue
