@@ -1,5 +1,7 @@
 import queue
 import math
+from heapq import heappop, heappush
+
 
 def is_point_in_box(point, box):
     # box: [left x corner, right x corner, top y corner, bottom y corner]
@@ -44,6 +46,58 @@ def breadth_first_search(destination_point, source_box, destination_box, adjacen
                     q.put(new_box)
 
     return False
+
+
+def get_euclidean_distance(p1: tuple, p2:  tuple):
+    x = 0
+    y = 1
+
+    distance = math.pow((p2[x] - p1[x]), 2) + pow((p2[y] - p1[y]), 2)
+    normalized_distance = math.sqrt(distance)
+    return normalized_distance
+
+
+# Some things to remember:
+# f cost: total cost of the node. h + g.
+# g cost: distance between the current node and the start node.
+# h cost: estimated cost to destination. JUST AN ESTIMATE.
+# find: f = h + g
+def a_star_search(destination_point, source_box, destination_box, adjacencies, visited_boxes, detail_points):
+    came_from = dict()
+    g_costs = dict()
+    h_costs = dict()
+    f_costs = dict()
+
+    q = []
+    heappush(q, (0, source_box)) 
+    g_costs[source_box] = 0
+    # Calculate h cost for source box 
+    # Also calculate f cost, or total cost
+    h_costs[source_box] = get_euclidean_distance(source_box, destination_box)
+    f_costs[source_box] = g_costs[source_box] + h_costs[source_box] # f = g + h
+    came_from[source_box] = None
+
+    while q:
+        f_cost, current_box = heappop(q)
+        visited_boxes.append(current_box)
+        if current_box == destination_box:
+            return path_to(destination_point, source_box, destination_box, came_from, detail_points)
+        else:
+            for new_box in adjacencies[current_box]:
+                new_g_cost = g_costs[current_box] + get_euclidean_distance(new_box, current_box)
+                new_h_cost = get_euclidean_distance(new_box, destination_box)
+                new_f_cost = new_h_cost + new_g_cost
+
+                if came_from.get(new_box) == None or new_f_cost < f_costs[new_box]:
+                    # if the new total cost is less than the current cost to get to that node
+                    came_from[new_box] = current_box
+                    g_costs[new_box] = new_g_cost
+                    h_costs[new_box] = new_h_cost
+                    f_costs[new_box] = new_f_cost
+                    heappush(q, (new_f_cost, new_box))
+                
+    return False
+
 
 def legal_path_between(source_point, source_box, destination_box, detail_points):
     destination_point = ()
@@ -121,8 +175,9 @@ def find_path (source_point, destination_point, mesh):
             
 
     if (source_box != None and destination_box != None):
-        result = breadth_first_search(destination_point, source_box, destination_box, mesh["adj"], visited_boxes, detail_points)
+        result = a_star_search(destination_point, source_box, destination_box, mesh["adj"], visited_boxes, detail_points)
         if (result == False):
+            print("No path!")
             return [], visited_boxes
         else:
            result.append(source_point)
@@ -130,6 +185,7 @@ def find_path (source_point, destination_point, mesh):
            return result, visited_boxes
             
     else: 
+        print("No path!")
         return [], visited_boxes
 
     """
