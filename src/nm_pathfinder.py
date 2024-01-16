@@ -16,13 +16,26 @@ def is_point_in_box(point, box):
     return False
 
 def path_to(source_point, destination_point, source_box, destination_box, forward_path, backward_path, middle_box, detail_points):
+    # find middle point
+    before = backward_path[middle_box]
+    after = forward_path[middle_box]
+    path = [before, middle_box, after]
+    path_points = []
+    dp = before
+    for i in range(0,2):
+        sp = legal_path_between(dp, path[i+1], path[i], detail_points)
+        path_points.append(sp)
+        dp = sp
+    # forward_path_points.append(source_point)
+    
+    
     # We should only be here if we found a path the canonical FINAL destination box.
     # The source point we're passing in here is the canonical source point.
-    forward_path_points = [(middle_box[0], middle_box[2])]
+    forward_path_points = [path_points[1]]
     current_box = middle_box
     # path_boxes = []
     # We are working backwards here, in destination -> source, but also to current box -> came_from[current_box].
-    dp = (middle_box[0], middle_box[2])
+    dp = path_points[1]
     while current_box != source_box and forward_path[current_box] != None:
         sp = legal_path_between(dp, forward_path[current_box], current_box, detail_points)
         forward_path_points.append(sp)
@@ -32,7 +45,7 @@ def path_to(source_point, destination_point, source_box, destination_box, forwar
 
     backward_path_points = []
     current_box = middle_box
-    dp = (middle_box[0], middle_box[2])
+    dp = path_points[1]
     while current_box != destination_box and backward_path[current_box] != None:
         sp = legal_path_between(dp, backward_path[current_box], current_box, detail_points)
         backward_path_points.append(sp)
@@ -42,7 +55,6 @@ def path_to(source_point, destination_point, source_box, destination_box, forwar
 
     forward_to_mid = forward_path_points[::-1]
     forward_to_mid.extend(backward_path_points)
-    print("combine: ", forward_to_mid)
     return forward_to_mid
 
 def breadth_first_search(destination_point, source_box, destination_box, adjacencies, visited_boxes, detail_points):
@@ -138,10 +150,6 @@ def bidirectional_a_star_search(source_point, destination_point, source_box, des
     while q:
         f_cost, current_box, current_goal = heappop(q)
         visited_boxes.append(current_box)
-        # print("Current box: ", current_box)
-        # if current_box == destination_box:
-        #     return path_to(destination_point, source_box, destination_box, forward_path, detail_points)
-        # else:
         if (current_goal == destination_box):
             for new_box in adjacencies[current_box]:
                 new_g_cost = forward_costs[current_box][0] + get_euclidean_distance(new_box, current_box)
@@ -155,7 +163,6 @@ def bidirectional_a_star_search(source_point, destination_point, source_box, des
                     heappush(q, (new_f_cost, new_box, current_goal))
                 
             if (backward_path.get(current_box) is not None):
-                print("in backwards path!")
                 return path_to(source_point, destination_point, source_box, destination_box, forward_path, backward_path, current_box, detail_points)
 
         else:
@@ -171,7 +178,6 @@ def bidirectional_a_star_search(source_point, destination_point, source_box, des
                     heappush(q, (new_f_cost, new_box, current_goal))
             # exit
             if (forward_path.get(current_box) is not None):
-                print("in front path!")
                 return path_to(source_point, destination_point, source_box, destination_box, forward_path, backward_path, current_box, detail_points)
 
                 
@@ -206,16 +212,11 @@ def old_bidirectional_a_star_search(destination_point, source_box, destination_b
 
     while q:
         f_cost, current_box, current_goal = heappop(q)
-        print("current box: ", current_box, " current goal: ", current_goal)
         if current_goal == destination_box:
-            print("current is dest")
             # Exit condition: current node is already discovered by the other path
             if backward_came_from.get(current_box) is not None:
                 # merge the two came from dicts so we know the full path
                 print(backward_came_from.update(forward_came_from))
-                print("forward: ", forward_came_from)
-                print("backward: ", backward_came_from)
-                print("middle: ", current_box)
                 return path_to(destination_point, source_box, destination_box, backward_came_from, forward_came_from, current_box, detail_points)
             for new_box in adjacencies[current_box]:
                 new_g_cost = forward_g_costs[current_box] + get_euclidean_distance(new_box, current_box)
@@ -275,20 +276,20 @@ def legal_path_between(source_point, source_box, destination_box, detail_points)
     y_range_of_border = [max(source_box[box_y1], destination_box[box_y1]), min(source_box[box_y2], source_box[box_y2])]
     ## x 
     # if x < min
-    if (p_x < x_range_of_border[x1]):
+    if (p_x <= x_range_of_border[x1]):
         destination_point += (x_range_of_border[x1],) # min val of range
     # if x > max
-    elif (p_x > x_range_of_border[x2]):
+    elif (p_x >= x_range_of_border[x2]):
         destination_point += (x_range_of_border[x2],) # max val of range
     # if min < x < max
     else:
         destination_point += (p_x,)
     ## y
     # if y < min
-    if (p_y < y_range_of_border[y1]):
+    if (p_y <= y_range_of_border[y1]):
         destination_point += (y_range_of_border[y1], ) # min val of range
     # if y > max
-    elif (p_y > y_range_of_border[y2]):
+    elif (p_y >= y_range_of_border[y2]):
         destination_point += (y_range_of_border[y2],) # max val of range
     # if min < y < max
     else:
