@@ -27,11 +27,10 @@ def path_to(source_point, destination_point, source_box, destination_box, forwar
         path_points.append(sp)
         dp = sp    
     # We should only be here if we found a path the canonical FINAL destination box.
-    # The source point we're passing in here is the canonical source point.
+    # From middle point -> source
     forward_path_points = [path_points[1]]
     current_box = middle_box
-    # path_boxes = []
-    # We are working backwards here, in destination -> source, but also to current box -> came_from[current_box].
+    # as long as the current box have parents, find the path between the current box and its parents
     dp = path_points[1]
     while current_box != source_box and forward_path[current_box] != None:
         sp = legal_path_between(dp, forward_path[current_box], current_box, detail_points)
@@ -40,6 +39,7 @@ def path_to(source_point, destination_point, source_box, destination_box, forwar
         current_box = forward_path[current_box]
     forward_path_points.append(source_point)
 
+    # same thing but from middle box to destination
     backward_path_points = []
     current_box = middle_box
     dp = path_points[1]
@@ -49,7 +49,7 @@ def path_to(source_point, destination_point, source_box, destination_box, forwar
         dp = sp
         current_box = backward_path[current_box]
     backward_path_points.append(destination_point)
-
+    # connect the entire path
     forward_to_mid = forward_path_points[::-1]
     forward_to_mid.extend(backward_path_points)
     return forward_to_mid
@@ -77,7 +77,7 @@ def get_euclidean_distance(p1: tuple, p2:  tuple):
     x = 0
     y = 1
 
-    distance = math.pow((p2[x] - p1[x]), 2) + pow((p2[y] - p1[y]), 2)
+    distance = math.pow((p2[x] - p1[x]), 2) + math.pow((p2[y] - p1[y]), 2)
     normalized_distance = math.sqrt(distance)
     return normalized_distance
 
@@ -156,27 +156,30 @@ def bidirectional_a_star_search(source_point, destination_point, source_box, des
     backward_h_cost = get_euclidean_distance(destination_box, source_box)
     backward_costs[destination_box] = (0, backward_h_cost, backward_h_cost) 
     backward_path[destination_box] = None
-
+    # While we have elements in the queue
     while q:
+        # pop an element
         cost, current_box, current_goal = heappop(q)
         visited_boxes.append(current_box)
+        # Check which path it's on based on its goal
         if (current_goal == destination_box):
+            # For all of its neighbors, calculate the g,h,f costs
             for new_box in adjacencies[current_box]:
                 new_g_cost = forward_costs[current_box][0] + get_euclidean_distance(new_box, current_box)
                 new_h_cost = get_euclidean_distance(new_box, destination_box)
                 new_f_cost = new_h_cost + new_g_cost
-
+                # if box is new OR the new calculated cost is less than it's current cost
                 if new_box not in forward_path or new_f_cost < forward_costs[new_box][2]:
-                    # if the new total cost is less than the current cost to get to that node
+                    # update the queue
                     forward_path[new_box] = current_box
                     forward_costs[new_box] = (new_g_cost, new_h_cost, new_f_cost)
                     heappush(q, (new_f_cost, new_box, current_goal))
-            
+            # If the current box is also on the other path, that means it's the middle point
+            # calculate the entire path
             if (current_box in backward_path):
                 return path_to(source_point, destination_point, source_box, destination_box, forward_path, backward_path, current_box, detail_points)
 
-                
-
+        
         else:
             for new_box in adjacencies[current_box]:
                 new_g_cost = backward_costs[current_box][0] + get_euclidean_distance(new_box, current_box)
