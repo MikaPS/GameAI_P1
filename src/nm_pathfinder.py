@@ -17,6 +17,7 @@ def is_point_in_box(point, box):
 
 def path_to(source_point, destination_point, source_box, destination_box, forward_path, backward_path, middle_box, detail_points):
     # find middle point
+    visited_boxes = []
     before = forward_path[middle_box]
     after = backward_path[middle_box]
     path = [before, middle_box, after]
@@ -35,9 +36,11 @@ def path_to(source_point, destination_point, source_box, destination_box, forwar
     while current_box != source_box and forward_path[current_box] != None:
         sp = legal_path_between(dp, forward_path[current_box], current_box, detail_points)
         forward_path_points.append(sp)
+        visited_boxes.append(current_box)
         dp = sp
         current_box = forward_path[current_box]
     forward_path_points.append(source_point)
+    visited_boxes.append(source_box)
 
     # same thing but from middle box to destination
     backward_path_points = []
@@ -46,13 +49,15 @@ def path_to(source_point, destination_point, source_box, destination_box, forwar
     while current_box != destination_box and backward_path[current_box] != None:
         sp = legal_path_between(dp, backward_path[current_box], current_box, detail_points)
         backward_path_points.append(sp)
+        visited_boxes.append(current_box)
         dp = sp
         current_box = backward_path[current_box]
     backward_path_points.append(destination_point)
+    visited_boxes.append(destination_box)
     # connect the entire path
     forward_to_mid = forward_path_points[::-1]
     forward_to_mid.extend(backward_path_points)
-    return forward_to_mid
+    return forward_to_mid, visited_boxes
 
 def breadth_first_search(destination_point, source_box, destination_box, adjacencies, visited_boxes, detail_points):
     came_from = dict()
@@ -145,52 +150,52 @@ def bidirectional_a_star_search(source_point, destination_point, source_box, des
     backward_path = dict()
     backward_costs = dict()
     q = []
-    heappush(q, (0, source_box, destination_box))  # adding the forward search
-    heappush(q, (0, destination_box, source_box))  # adding the backward search
     # tuple of (g cost, h cost, f cost)
     # Calculate h cost for source box and f cost, or total cost
-    forward_h_cost = get_euclidean_distance(source_box, destination_box)
+    heappush(q, (0, source_box, destination_box, source_point))  # adding the forward search
+    forward_h_cost = get_euclidean_distance(source_point, destination_point)
     forward_costs[source_box] = (0, forward_h_cost, forward_h_cost) 
     forward_path[source_box] = None
     # same for backward
-    backward_h_cost = get_euclidean_distance(destination_box, source_box)
+    heappush(q, (0, destination_box, source_box, destination_point))  # adding the backward search
+    backward_h_cost = get_euclidean_distance(destination_point, source_point)
     backward_costs[destination_box] = (0, backward_h_cost, backward_h_cost) 
     backward_path[destination_box] = None
+
+
     # While we have elements in the queue
     while q:
         # pop an element
-        cost, current_box, current_goal = heappop(q)
+        cost, current_box, current_goal, entry_point = heappop(q)
         visited_boxes.append(current_box)
         # Check which path it's on based on its goal
         if (current_goal == destination_box):
             # For all of its neighbors, calculate the g,h,f costs
             for new_box in adjacencies[current_box]:
-                new_g_cost = forward_costs[current_box][0] + get_euclidean_distance(new_box, current_box)
-                new_h_cost = get_euclidean_distance(new_box, destination_box)
+                # new_entry = legal_path_between(entry_point, current_box, new_box, detail_points)
+                new_g_cost = forward_costs[current_box][0] + get_euclidean_distance(((new_box[0]+new_box[1])/2, (new_box[2]+new_box[3])/2), entry_point)
+                new_h_cost = get_euclidean_distance(((new_box[0]+new_box[1])/2, (new_box[2]+new_box[3])/2), destination_point)
                 new_f_cost = new_h_cost + new_g_cost
                 # if box is new OR the new calculated cost is less than it's current cost
                 if new_box not in forward_path or new_f_cost < forward_costs[new_box][2]:
                     # update the queue
                     forward_path[new_box] = current_box
                     forward_costs[new_box] = (new_g_cost, new_h_cost, new_f_cost)
-                    heappush(q, (new_f_cost, new_box, current_goal))
+                    heappush(q, (new_f_cost, new_box, current_goal, ((new_box[0]+new_box[1])/2, (new_box[2]+new_box[3])/2)))
             # If the current box is also on the other path, that means it's the middle point
             # calculate the entire path
             if (current_box in backward_path):
                 return path_to(source_point, destination_point, source_box, destination_box, forward_path, backward_path, current_box, detail_points)
-
-        
         else:
             for new_box in adjacencies[current_box]:
-                new_g_cost = backward_costs[current_box][0] + get_euclidean_distance(new_box, current_box)
-                new_h_cost = get_euclidean_distance(new_box, source_box)
+                # new_entry = legal_path_between(entry_point, current_box, new_box, detail_points)
+                new_g_cost = backward_costs[current_box][0] + get_euclidean_distance(((new_box[0]+new_box[1])/2, (new_box[2]+new_box[3])/2), entry_point)
+                new_h_cost = get_euclidean_distance(((new_box[0]+new_box[1])/2, (new_box[2]+new_box[3])/2), source_point)
                 new_f_cost = new_h_cost + new_g_cost
-
                 if new_box not in backward_path or new_f_cost < backward_costs[new_box][2]:
-                    # if the new total cost is less than the current cost to get to that node
                     backward_path[new_box] = current_box
                     backward_costs[new_box] = (new_g_cost, new_h_cost, new_f_cost)
-                    heappush(q, (new_f_cost, new_box, current_goal))
+                    heappush(q, (new_f_cost, new_box, current_goal, ((new_box[0]+new_box[1])/2, (new_box[2]+new_box[3])/2)))
             # exit
             if (current_box in forward_path):
                 return path_to(source_point, destination_point, source_box, destination_box, forward_path, backward_path, current_box, detail_points)
@@ -312,13 +317,12 @@ def legal_path_between(source_point, source_box, destination_box, detail_points)
         destination_point += (p_y, )
     # match the source box with the bounds of the destination box
     detail_points[source_box] = destination_point
+    # assert (x_range_of_border[x1] == x_range_of_border[x2] and (destination_point[1] == y_range_of_border[y1] or destination_point[1] == y_range_of_border[y2])) or (y_range_of_border[y1] == y_range_of_border[y2] and (destination_point[0] == x_range_of_border[x1] or destination_point[0] == x_range_of_border[x2]))
+    
     return destination_point
 
 def get_euclidean_distance(p1: tuple, p2:  tuple):
-    x = 0
-    y = 1
-
-    distance = math.pow((p2[x] - p1[x]), 2) + pow((p2[y] - p1[y]), 2)
+    distance = math.pow((p2[0] - p1[0]), 2) + pow((p2[1] - p1[1]), 2)
     normalized_distance = math.sqrt(distance)
     return normalized_distance
 
@@ -340,9 +344,11 @@ def find_path (source_point, destination_point, mesh):
 
     if (source_box != None and destination_box != None):
         if (destination_box in mesh["adj"][source_box] or source_box in mesh["adj"][destination_box]):
-            return ([source_point, destination_point], [source_box, destination_box])
+            mid_point = legal_path_between(source_point, destination_box, source_box, detail_points)
+            return ([source_point, mid_point, destination_point], [source_box, destination_box])
         if (destination_box == source_box):
-            return ([source_point, destination_point], [source_box])
+            mid_point = legal_path_between(source_point, destination_box, source_box, detail_points)
+            return ([source_point, mid_point, destination_point], [source_box])
 
         result = bidirectional_a_star_search(source_point, destination_point, source_box, destination_box, mesh["adj"], visited_boxes, detail_points)
         # result = a_star_search(destination_point, source_box, destination_box, mesh["adj"], visited_boxes, detail_points)
@@ -353,7 +359,7 @@ def find_path (source_point, destination_point, mesh):
         else:
         #    result.append(source_point)
         #    result.reverse()
-           return result, visited_boxes
+           return result[0], visited_boxes
             
     else: 
         print("Please click on the white areas of the picture, we couldn't find your source/destination points!")
