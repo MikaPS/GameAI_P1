@@ -162,33 +162,32 @@ def bidirectional_a_star_search(source_point, destination_point, source_box, des
 
             # For all of its neighbors, calculate the g,h,f costs
             for new_box in adjacencies[current_box]:
-                if (new_box not in detail_points):
-                    new_entry = legal_path_between(entry_point, current_box, new_box, detail_points)
-                    new_g_cost = forward_costs[current_box][0] + get_euclidean_distance(new_entry, entry_point)
-                    new_h_cost = get_euclidean_distance(new_entry, destination_point)
-                    new_f_cost = new_h_cost + new_g_cost
-                    # if box is new OR the new calculated cost is less than it's current cost
-                    if (new_box not in forward_path or new_f_cost < forward_costs[new_box][2]):
-                        # update the queue
-                        if forward_path[current_box] is not new_box:
-                            forward_path[new_box] = current_box
-                            forward_costs[new_box] = (new_g_cost, new_h_cost, new_f_cost)
-                            heappush(q, (new_f_cost, new_box, current_goal, new_entry))
+                
+                new_entry = legal_path_between(entry_point, current_box, new_box, detail_points)
+                new_g_cost = forward_costs[current_box][0] + get_euclidean_distance(new_entry, entry_point)
+                new_h_cost = get_euclidean_distance(new_entry, destination_point)
+                new_f_cost = new_h_cost + new_g_cost
+                # if box is new OR the new calculated cost is less than it's current cost
+                if (new_box not in forward_path or new_f_cost < forward_costs[new_box][2]):
+                    # update the queue
+                    if forward_path[current_box] is not new_box and (new_box not in detail_points):
+                        forward_path[new_box] = current_box
+                        forward_costs[new_box] = (new_g_cost, new_h_cost, new_f_cost)
+                        heappush(q, (forward_costs[new_box][2], new_box, current_goal, new_entry))
         else:
             # exit
             if (current_box in forward_path):
                 return path_to(source_point, destination_point, source_box, destination_box, forward_path, backward_path, current_box, detail_points)
             for new_box in adjacencies[current_box]:
-                if (new_box not in detail_points):
-                    new_entry = legal_path_between(entry_point, current_box, new_box, detail_points)
-                    new_g_cost = backward_costs[current_box][0] + get_euclidean_distance(new_entry, entry_point)
-                    new_h_cost = get_euclidean_distance(new_entry, source_point)
-                    new_f_cost = new_h_cost + new_g_cost
-                    if (new_box not in backward_path or new_f_cost < backward_costs[new_box][2]):
-                        if backward_path[current_box] is not new_box:
-                            backward_path[new_box] = current_box
-                            backward_costs[new_box] = (new_g_cost, new_h_cost, new_f_cost)
-                            heappush(q, (new_f_cost, new_box, current_goal, new_entry))
+                new_entry = legal_path_between(entry_point, current_box, new_box, detail_points)
+                new_g_cost = backward_costs[current_box][0] + get_euclidean_distance(new_entry, entry_point)
+                new_h_cost = get_euclidean_distance(new_entry, source_point)
+                new_f_cost = new_h_cost + new_g_cost
+                if (new_box not in backward_path or new_f_cost < backward_costs[new_box][2]):
+                    if backward_path[current_box] is not new_box and (new_box not in detail_points):
+                        backward_path[new_box] = current_box
+                        backward_costs[new_box] = (new_g_cost, new_h_cost, new_f_cost)
+                        heappush(q, (backward_costs[new_box][2], new_box, current_goal, new_entry))
             
 
                 
